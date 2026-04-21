@@ -22,6 +22,8 @@ let indiceSemanaActual = 0;
 let clasesSemana = [];
 let inscripcionesCount = {};
 
+const SESION_EXPIRATION_HOURS = 8;
+
 document.addEventListener('DOMContentLoaded', () => {
     init();
 });
@@ -53,6 +55,15 @@ function verificarSesion() {
     const sesion = localStorage.getItem('profesor_session');
     if (sesion) {
         const data = JSON.parse(sesion);
+        
+        if (data.loginTime) {
+            const horasTranscurridas = (Date.now() - data.loginTime) / (1000 * 60 * 60);
+            if (horasTranscurridas > SESION_EXPIRATION_HOURS) {
+                handleLogout();
+                return;
+            }
+        }
+        
         profesorId = data.id;
         mostrarDashboard();
     }
@@ -68,7 +79,10 @@ async function handleLogin(e) {
     if (!supabase) {
         if (email && password) {
             profesorId = 'demo-profesor-id';
-            localStorage.setItem('profesor_session', JSON.stringify({ id: profesorId }));
+            localStorage.setItem('profesor_session', JSON.stringify({ 
+                id: profesorId,
+                loginTime: Date.now()
+            }));
             mostrarDashboard();
         }
         return;
@@ -88,7 +102,10 @@ async function handleLogin(e) {
 
         if (profesor) {
             profesorId = profesor.id;
-            localStorage.setItem('profesor_session', JSON.stringify({ id: profesor.id }));
+            localStorage.setItem('profesor_session', JSON.stringify({ 
+                id: profesor.id,
+                loginTime: Date.now()
+            }));
             mostrarDashboard();
         } else {
             errorEl.textContent = 'Email o contraseña incorrectos';
