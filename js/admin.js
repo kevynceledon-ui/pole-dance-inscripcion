@@ -20,6 +20,7 @@ let semanaActual = null;
 let semanas = [];
 let indiceSemanaActual = 0;
 let clasesSemana = [];
+let inscripcionesCount = {};
 
 document.addEventListener('DOMContentLoaded', () => {
     init();
@@ -30,7 +31,7 @@ async function init() {
     
     document.getElementById('login-form').addEventListener('submit', handleLogin);
     document.getElementById('logout-btn').addEventListener('click', handleLogout);
-    document.getElementById('crear-semana-btn').addEventListener('click', crearSemana);
+    document.getElementById('crear-semana-btn').addEventListener('click', () => mostrarModalCrearSemana());
     document.getElementById('copiar-semana-btn').addEventListener('click', copiarSemanaAnterior);
     document.getElementById('semana-anterior').addEventListener('click', () => cambiarSemana(-1));
     document.getElementById('semana-siguiente').addEventListener('click', () => cambiarSemana(1));
@@ -183,12 +184,14 @@ function actualizarDisplaySemana() {
     }
 
     const semana = semanas[indiceSemanaActual];
-    const date = new Date(semana.fecha_inicio);
+    const date = new Date(semana.fecha_inicio + 'T00:00:00');
     const dia = date.getDate();
     const mes = date.toLocaleDateString('es-ES', { month: 'long' });
+    const anio = date.getFullYear();
     
+    const fechaFormateada = `${dia} ${mes.charAt(0).toUpperCase() + mes.slice(1)} ${anio}`;
     document.getElementById('semana-actual').textContent = 
-        semana.nombre || `${dia} ${mes.charAt(0).toUpperCase() + mes.slice(1)}`;
+        semana.nombre || fechaFormateada;
 }
 
 function cambiarSemana(direction) {
@@ -267,15 +270,19 @@ function renderClases() {
                 <div class="clase-lista">
                     ${clasesSemana
                         .filter(c => c.dia_semana === dia.numero)
-                        .map(c => `
-                            <div class="clase-lista-item" data-clase-id="${c.id}">
-                                <div class="clase-lista-info">
-                                    <span class="clase-lista-nivel">${c.nivel}</span>
-                                    <span class="clase-lista-inscritas">0 inscritas</span>
+                        .map(c => {
+                            const count = inscripcionesCount[c.id] || 0;
+                            const countText = count === 1 ? '1 inscrita' : `${count} inscritas`;
+                            return `
+                                <div class="clase-lista-item" data-clase-id="${c.id}">
+                                    <div class="clase-lista-info">
+                                        <span class="clase-lista-nivel">${c.nivel}</span>
+                                        <span class="clase-lista-inscritas">${countText}</span>
+                                    </div>
+                                    <button class="btn-eliminar-clase btn btn-small">Eliminar</button>
                                 </div>
-                                <button class="btn-eliminar-clase btn btn-small">Eliminar</button>
-                            </div>
-                        `).join('')}
+                            `;
+                        }).join('')}
                 </div>
             `;
 
@@ -390,12 +397,62 @@ async function eliminarClase(claseId) {
     }
 }
 
-async function crearSemana() {
-    const fechaSemana = getFechaSemanaActual();
-    const date = new Date(fechaSemana);
+function mostrarModalCrearSemana() {
+    const modal = document.getElementById('modal');
+    const body = document.getElementById('modal-body');
+    
+    const fechaSemanaProxima = getFechaSemanaSiguiente();
+    const fechaActual = getFechaSemanaActual();
+
+    body.innerHTML = `
+        <h3>Crear Nueva Semana</h3>
+        <form id="crear-semana-form">
+            <div class="form-group">
+                <label for="fecha-semana">Fecha de inicio (Lunes)</label>
+                <input type="date" id="fecha-semana" value="${fechaSemanaProxima}" required>
+            </div>
+            <div class="form-group">
+                <label for="nombre-semana">Nombre (opcional)</label>
+                <input type="text" id="nombre-semana" placeholder="Ej: Semana 21-27 Abril">
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+                <button type="submit" class="btn btn-primary">Crear Semana</button>
+            </div>
+        </form>
+    `;
+
+    modal.classList.remove('hidden');
+
+    document.getElementById('crear-semana-form').addEventListener('submit', (e) => {
+        e.preventDefault();
+        const fechaSemana = document.getElementById('fecha-semana').value;
+        const nombreSemana = document.getElementById('nombre-semana').value;
+        crearSemana(fechaSemana, nombreSemana);
+    });
+}
+
+function getFechaSemanaSiguiente() {
+    const hoy = new Date();
+    const proximoLunes = new Date(hoy);
+    proximoLunes.setDate(hoy.getDate() + (1 + 7 - hoy.getDay()) % 7);
+    if (proximoLunes <= hoy) {
+        proximoLunes.setDate(proximoLunes.getDate() + 7);
+    }
+    return proximoLunes.toISOString().split('T')[0];
+}
+
+async function crearSemana(fechaSemana, nombreSemana) {
+    if (!fechaSemana) {
+        alert('Selecciona una fecha');
+        return;
+    }
+
+    const date = new Date(fechaSemana + 'T00:00:00');
     const dia = date.getDate();
     const mes = date.toLocaleDateString('es-ES', { month: 'long' });
-    const nombre = `${dia} ${mes.charAt(0).toUpperCase() + mes.slice(1)}`;
+    const anio = date.getFullYear();
+    const nombre = nombreSemana || `${dia} ${mes.charAt(0).toUpperCase() + mes.slice(1)} ${anio}`;
 
     if (!supabase) {
         semanas.unshift({ id: 'demo-new-' + Date.now(), fecha_inicio: fechaSemana, nombre });
@@ -404,13 +461,20 @@ async function crearSemana() {
         clasesSemana = [];
         renderClases();
         document.getElementById('lista-inscripciones').innerHTML = '';
+        cerrarModal();
         return;
     }
 
     try {
         const existe = semanas.find(s => s.fecha_inicio === fechaSemana);
         if (existe) {
-            alert('Ya existe una semana para esta fecha');
+            const confirmar = confirm('Ya existe una semana para esta fecha. ¿Deseas ir a esa semana?');
+            if (confirmar) {
+                indiceSemanaActual = semanas.findIndex(s => s.fecha_inicio === fechaSemana);
+                actualizarDisplaySemana();
+                await cargarClasesSemanaActual();
+            }
+            cerrarModal();
             return;
         }
 
@@ -430,9 +494,11 @@ async function crearSemana() {
         indiceSemanaActual = 0;
         semanaActual = data;
         clasesSemana = [];
+        inscripcionesCount = {};
         actualizarDisplaySemana();
         renderClases();
         document.getElementById('lista-inscripciones').innerHTML = '';
+        cerrarModal();
 
     } catch (error) {
         console.error('Error creando semana:', error);
@@ -510,6 +576,14 @@ async function cargarInscripciones() {
 
         if (error) throw error;
 
+        inscripcionesCount = {};
+        if (data) {
+            data.forEach(ins => {
+                inscripcionesCount[ins.clase_id] = (inscripcionesCount[ins.clase_id] || 0) + 1;
+            });
+        }
+
+        renderClases();
         renderInscripciones(data || []);
 
     } catch (error) {
