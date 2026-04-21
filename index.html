@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pole Dance - Inscripción</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Pole Dance</h1>
+            <p>Inscripción de Clases</p>
+        </header>
+
+        <main>
+            <section id="form-section" class="section">
+                <h2>Ingresa tus datos</h2>
+                <form id="alumna-form">
+                    <div class="form-group">
+                        <label for="nombre">Nombre</label>
+                        <input type="text" id="nombre" name="nombre" required placeholder="Tu nombre">
+                    </div>
+                    <div class="form-group">
+                        <label for="telefono">Teléfono</label>
+                        <input type="tel" id="telefono" name="telefono" required placeholder="Tu número de teléfono">
+                    </div>
+                    <button type="submit" class="btn btn-primary">Continuar</button>
+                </form>
+            </section>
+
+            <section id="clases-section" class="section hidden">
+                <div class="header-section">
+                    <h2>Semana <span id="semana-nombre"></span></h2>
+                    <p id="alumna-info"></p>
+                </div>
+
+                <div id="lista-clases" class="clases-grid">
+                </div>
+
+                <button id="guardar-btn" class="btn btn-primary btn-block">Confirmar Inscripción</button>
+            </section>
+
+            <section id="confirmacion-section" class="section hidden">
+                <div class="success-message">
+                    <span class="icon">✓</span>
+                    <h2>¡Inscripción Guardada!</h2>
+                    <p>Tu inscripción ha sido guardada correctamente.</p>
+                    <p>Recuerda: si no puedes asistir a una clase, avisa a tu profesor.</p>
+                    <button id="nueva-inscripcion-btn" class="btn btn-secondary">Inscribirme en otra clase</button>
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <a href="admin.html">Acceso Profesor</a>
+        </footer>
+    </div>
+
+    <script type="module" src="js/app.js"></script>
+</body>
+</html>
