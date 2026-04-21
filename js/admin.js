@@ -29,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 async function init() {
+    initTheme();
     verificarSesion();
     
     document.getElementById('login-form').addEventListener('submit', handleLogin);
@@ -48,6 +49,18 @@ async function init() {
     document.querySelector('.modal-close').addEventListener('click', cerrarModal);
     document.getElementById('modal').addEventListener('click', (e) => {
         if (e.target.id === 'modal') cerrarModal();
+    });
+}
+
+function initTheme() {
+    const savedTheme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', savedTheme);
+    
+    document.getElementById('theme-toggle').addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
     });
 }
 

@@ -12,6 +12,17 @@
     --radius: 8px;
 }
 
+[data-theme="dark"] {
+    --primary-color: #e85a9c;
+    --primary-hover: #d63384;
+    --secondary-color: #adb5bd;
+    --background-color: #1a1a2e;
+    --card-bg: #16213e;
+    --text-color: #e9ecef;
+    --border-color: #3a4a6b;
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -524,4 +535,40 @@ footer a:hover {
     .btn-eliminar-inscripcion {
         width: 100%;
     }
+}
+
+.theme-toggle {
+    position: fixed;
+    top: 15px;
+    right: 15px;
+    background: var(--card-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 50%;
+    width: 45px;
+    height: 45px;
+    cursor: pointer;
+    font-size: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    transition: transform 0.2s;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.1);
+}
+
+.theme-toggle .icon-sun,
+.theme-toggle .icon-moon {
+    display: none;
+}
+
+[data-theme="dark"] .theme-toggle .icon-moon {
+    display: block;
+}
+
+[data-theme="light"] .theme-toggle .icon-sun,
+:root:not([data-theme]) .theme-toggle .icon-sun {
+    display: block;
 }
